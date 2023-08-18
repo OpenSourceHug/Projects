@@ -4,6 +4,7 @@ from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.vectorstores import FAISS
 from langchain.chat_models import ChatOpenAI
 from langchain.chains import LLMChain
+import streamlit as st 
 from dotenv import find_dotenv, load_dotenv
 from langchain.prompts.chat import (
     ChatPromptTemplate,
@@ -16,6 +17,27 @@ load_dotenv(find_dotenv())
 embeddings = OpenAIEmbeddings()
 
 
+def main():
+    
+    st.set_page_config(page_title="Transcript and ask Youtube video", page_icon="🔗")
+    st.header("Ask something about the video 🎥⚙️📝")
+
+    with st.sidebar:
+        st.subheader("Youtube video URL:")
+        url = st.text_input("Enter the URL: ")
+        query = st.text_input("Ask a question: ")
+        
+        response = ''
+        if st.button("Process"):
+            video_url = url
+            db = create_db_from_youtube_video_url(video_url)
+            response, docs = get_response_from_query(db, query)
+
+    
+    st.write(response)
+
+
+
 def create_db_from_youtube_video_url(video_url):
     loader = YoutubeLoader.from_youtube_url(video_url)
     transcript = loader.load()
@@ -24,8 +46,7 @@ def create_db_from_youtube_video_url(video_url):
     docs = text_splitter.split_documents(transcript)
 
     db = FAISS.from_documents(docs, embeddings)
-    return db
-
+    return db 
 
 def get_response_from_query(db, query, k=4):
     """
@@ -40,15 +61,15 @@ def get_response_from_query(db, query, k=4):
 
     # Template to use for the system message prompt
     template = """
-        You are a helpful assistant that that can answer questions about youtube videos 
-        based on the video's transcript: {docs}
+    You are a helpful assistant that that can answer questions about youtube videos 
+    based on the video's transcript: {docs}
         
-        Only use the factual information from the transcript to answer the question.
+    Only use the factual information from the transcript to answer the question.
         
-        If you feel like you don't have enough information to answer the question, say "I don't know".
+    If you feel like you don't have enough information to answer the question, say "I don't know".
         
-        Your answers should be verbose and detailed.
-        """
+    Your answers should be verbose and detailed.
+    """
 
     system_message_prompt = SystemMessagePromptTemplate.from_template(template)
 
@@ -66,11 +87,5 @@ def get_response_from_query(db, query, k=4):
     response = response.replace("\n", "")
     return response, docs
 
-
-# Example usage:
-video_url = "https://www.youtube.com/watch?v=L_Guz73e6fw"
-db = create_db_from_youtube_video_url(video_url)
-
-query = "What are they saying about Microsoft?"
-response, docs = get_response_from_query(db, query)
-print(textwrap.fill(response, width=50))
+if __name__ == '__main__':
+    main()
