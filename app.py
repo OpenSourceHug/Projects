@@ -25,12 +25,14 @@ def main():
     with st.sidebar:
         st.subheader("Youtube video URL:")
         url = st.text_input("Enter the URL: ")
-        query = st.text_input("Ask a question: ")
+        if url:
+            video_url = url
+            db = create_db_from_youtube_video_url(video_url)
+            if db:
+                query = st.text_input("Ask a question: ")
         
         response = ''
         if st.button("Process"):
-            video_url = url
-            db = create_db_from_youtube_video_url(video_url)
             response, docs = get_response_from_query(db, query)
 
     
